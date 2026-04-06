@@ -1,0 +1,141 @@
+\section{Quicksort}
+
+\textbf{Idea:} Quicksort is a divide-and-conquer algorithm that sorts by
+\textbf{partitioning} an array around a chosen pivot.
+All elements smaller than the pivot move to the left,
+and all elements greater stay on the right.
+Then we recursively quicksort the left and right partitions. For simplicity, we choose the \textbf{last element as the pivot}.
+
+% =========================================================
+% Visualization (Partition) -- ALL steps
+% =========================================================
+\subsection{Visualization (Partition)}
+Example: \([5,2,4,1,3]\) with pivot = last element (3)
+
+% Usage:
+% \QuickStep{a0}{a1}{a2}{a3}{a4}{leftIndex}{iIndex}{note}
+% Set iIndex = -1 to hide i (used after loop), set leftIndex = -1 to hide left.
+\newcommand{\QuickStep}[8]{%
+\noindent\begin{tikzpicture}[x=1cm,y=1cm,>=Stealth]
+  \def\n{5}
+  \def\cellW{1.25}
+  \def\H{0.85}
+
+  % Outer box
+  \draw[line width=1.2pt] (0,0) rectangle ({\n*\cellW},\H);
+
+  % Dividers
+  \foreach \k in {1,...,4} {
+    \draw[line width=1.2pt] ({\k*\cellW},0) -- ({\k*\cellW},\H);
+  }
+
+  % Values
+  \node at ({0.5*\cellW},0.5*\H) {#1};
+  \node at ({1.5*\cellW},0.5*\H) {#2};
+  \node at ({2.5*\cellW},0.5*\H) {#3};
+  \node at ({3.5*\cellW},0.5*\H) {#4};
+  \node at ({4.5*\cellW},0.5*\H) {#5};
+
+  % Pivot pointer (always last index = 4)
+  \draw[->,thick] ({(4+0.5)*\cellW},1.70) -- ({(4+0.5)*\cellW},\H);
+  \node[anchor=south] at ({(4+0.5)*\cellW},1.70) {$pivot$};
+
+  % If left and i overlap, draw one pointer labeled "left, i"
+  \ifnum#6>-1
+    \ifnum#7>-1
+      \ifnum#6=#7
+        \draw[->,thick] ({(#6+0.5)*\cellW},1.45) -- ({(#6+0.5)*\cellW},\H);
+        \node[anchor=south] at ({(#6+0.5)*\cellW},1.45) {$left,\ i$};
+      \else
+        % left pointer (higher)
+        \draw[->,thick] ({(#6+0.5)*\cellW},1.60) -- ({(#6+0.5)*\cellW},\H);
+        \node[anchor=south] at ({(#6+0.5)*\cellW},1.60) {$left$};
+
+        % i pointer (lower)
+        \draw[->,thick] ({(#7+0.5)*\cellW},1.35) -- ({(#7+0.5)*\cellW},\H);
+        \node[anchor=south] at ({(#7+0.5)*\cellW},1.35) {$i$};
+      \fi
+    \else
+      % only left shown
+      \draw[->,thick] ({(#6+0.5)*\cellW},1.45) -- ({(#6+0.5)*\cellW},\H);
+      \node[anchor=south] at ({(#6+0.5)*\cellW},1.45) {$left$};
+    \fi
+  \else
+    % left hidden, maybe i shown
+    \ifnum#7>-1
+      \draw[->,thick] ({(#7+0.5)*\cellW},1.45) -- ({(#7+0.5)*\cellW},\H);
+      \node[anchor=south] at ({(#7+0.5)*\cellW},1.45) {$i$};
+    \fi
+  \fi
+
+  % Note below
+  \node[anchor=west] at (0,-0.45) {#8};
+\end{tikzpicture}\par\vspace{0.35cm}
+}
+
+% -------------------------
+% ALL partition steps
+% -------------------------
+\QuickStep{5}{2}{4}{1}{3}{0}{0}{Start: $left=0,\ i=0,\ pivot=3$}
+
+\QuickStep{5}{2}{4}{1}{3}{0}{0}{$a[i]=5 > 3 \Rightarrow$ do nothing, $i \leftarrow i+1$}
+
+\QuickStep{5}{2}{4}{1}{3}{0}{1}{$a[i]=2 < 3 \Rightarrow$ swap $a[left]$ and $a[i]$, $left \leftarrow left+1$}
+
+\QuickStep{2}{5}{4}{1}{3}{1}{2}{After swap: $[2,5,4,1,3]$, now $left=1,\ i=2$}
+
+\QuickStep{2}{5}{4}{1}{3}{1}{2}{$a[i]=4 > 3 \Rightarrow$ do nothing, $i \leftarrow i+1$}
+
+\QuickStep{2}{5}{4}{1}{3}{1}{3}{$a[i]=1 < 3 \Rightarrow$ swap $a[left]$ and $a[i]$, $left \leftarrow left+1$}
+
+\QuickStep{2}{1}{4}{5}{3}{2}{-1}{After swap: $[2,1,4,5,3]$, loop ends ($i=e$)}
+
+\QuickStep{2}{1}{4}{5}{3}{2}{-1}{Final step: swap pivot with $a[left]$ (swap $3$ and $4$)}
+
+\QuickStep{2}{1}{3}{5}{4}{2}{-1}{Done partition: pivot placed at index $left$ $\Rightarrow [2,1,3,5,4]$}
+
+After placing the pivot in its correct position, quicksort then sorts the left subarray $[2,1]$ using $1$ as the pivot and the right subarray $[5, 4]$ using $4$ as the pivot, since the previous pivot $3$ is in its final spot. 
+% =========================================================
+% Code (match the video pseudocode)
+% =========================================================
+\subsection{Quicksort Code (Java)}
+\begin{verbatim}
+void quickSort(int[] arr, int s, int e) {
+    if (e - s + 1 <= 1) return;
+
+    int pivot = arr[e];
+    int left = s;
+
+    // partition
+    for (int i = s; i < e; i++) {
+        if (arr[i] < pivot) {
+            int temp = arr[left];
+            arr[left] = arr[i];
+            arr[i] = temp;
+            left++;
+        }
+    }
+
+    // move pivot between the partitions
+    int temp = arr[left];
+    arr[left] = arr[e];
+    arr[e] = temp;
+
+    // recurse on left and right partitions
+    quickSort(arr, s, left - 1);
+    quickSort(arr, left + 1, e);
+}
+\end{verbatim}
+
+\subsection{Time Complexity}
+\begin{itemize}
+  \item \textbf{Best case:} $O(n\log n)$ (pivot splits evenly)
+  \item \textbf{Average case:} $O(n\log n)$
+  \item \textbf{Worst case:} $O(n^2)$ (pivot gives very unbalanced splits)
+\end{itemize}
+
+\subsection{Space Complexity}
+\begin{itemize}
+  \item In-place partitioning uses $O(1)$ extra array space
+  \item Recursion stack: $O(\log n)$ average, $O(n)$ worst
+\end{itemize}

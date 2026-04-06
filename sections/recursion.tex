@@ -1,0 +1,49 @@
+\section{Recursion}
+
+\textbf{Recursion} is a programming technique where a function calls itself to solve a problem by breaking it into smaller subproblems.  
+Every recursive function must have a \textbf{base case} to stop the recursion.
+
+\subsection{Memory Model}
+Each function call (recursive or not) creates a new \textbf{stack frame} on the call stack, which stores:
+\begin{itemize}
+  \item local variables
+  \item parameters
+  \item return address
+\end{itemize}
+Recursive calls create multiple stack frames, which are removed as the function returns. Recursive depth determines stack memory usage.
+
+\subsection{Example: Factorial}
+
+Computing factorials with a for loop:
+\begin{verbatim}
+int factorial(int n) {
+    int result = 1;
+    for (int i = 1; i <= n; i++) {
+        result *= i;
+    }
+    return result;
+}
+\end{verbatim}
+Computing factorials with recursion:
+\begin{verbatim}
+int factorial(int n) {
+    if (n <= 1) {
+        return 1;   // base case
+    }
+    return n * factorial(n - 1);
+}
+\end{verbatim}
+
+\subsection{Example: Fibonacci}
+Computing fibonacci with recursion:
+\begin{verbatim}
+int fib(int x) {
+    if (x == 1) {
+        return 1;
+    }
+    if (x <= 0) {
+        return 0;
+    }
+    return fib(x - 1) + fib(x - 2);
+}
+\end{verbatim}

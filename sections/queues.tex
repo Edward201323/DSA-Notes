@@ -1,0 +1,17 @@
+\section{Queues}
+
+A \textbf{queue} is a data structure that supports insertion at one end and removal at the other.  
+The simplest way a queue be implemented is using a \textbf{linked list} with head and tail pointers.
+
+\subsection{Core Operations}
+\begin{itemize}
+  \item \textbf{Enqueue:} add an element to the back of the queue (tail)
+  \item \textbf{Dequeue:} remove an element from the front of the queue (head)
+\end{itemize}
+Enqueue and Dequeue are both \textbf{$O(1)$} since we maintain pointers to the head and tail.
+
+\subsection{Ordering Property}
+Queues are \textbf{FIFO} (\textit{First In, First Out}):
+\[
+\text{Enqueue: } 1,2,3 \quad \Rightarrow \quad \text{Dequeue: } 1,2,3
+\]

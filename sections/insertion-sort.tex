@@ -1,0 +1,93 @@
+\section{Insertion Sort}
+
+\textbf{Idea:} In insertion sort, we build the sorted array one element at a time.
+We start by assuming the first element is already sorted, then repeatedly swap the current element left
+until it reaches its correct position.
+
+\subsection{Step-by-Step Example}
+Sort: \([2,3,4,1,6]\)
+
+% ---------- TikZ helper for array steps ----------
+% Usage: \ArrayStep{v1}{v2}{v3}{v4}{v5}{jIndex}{note}
+% jIndex = current index in while loop. Set to -1 to hide pointers.
+\newcommand{\ArrayStep}[7]{%
+\noindent\begin{tikzpicture}[x=1cm,y=1cm,>=Stealth]
+  \def\n{5}
+  \def\cellW{1.25}
+  \def\H{1.0}
+
+  % Outer box
+  \draw[line width=1.2pt] (0,0) rectangle ({\n*\cellW},\H);
+
+  % Cell dividers
+  \foreach \k in {1,...,4} {
+    \draw[line width=1.2pt] ({\k*\cellW},0) -- ({\k*\cellW},\H);
+  }
+
+  % Values
+  \node at ({0.5*\cellW},0.5*\H) {#1};
+  \node at ({1.5*\cellW},0.5*\H) {#2};
+  \node at ({2.5*\cellW},0.5*\H) {#3};
+  \node at ({3.5*\cellW},0.5*\H) {#4};
+  \node at ({4.5*\cellW},0.5*\H) {#5};
+
+  % j pointer (points to cell j)
+  \ifnum#6>-1
+    \draw[->,thick] ({(#6+0.55)*\cellW},1.65) -- ({(#6+0.55)*\cellW},\H);
+    \node[anchor=south] at ({(#6+0.55)*\cellW},1.65) {$j$};
+  \fi
+
+  % j-1 pointer (points to cell j-1), only if j > 0
+  \ifnum#6>0
+    \draw[->,thick] ({(#6-0.55)*\cellW},1.35) -- ({(#6-0.55)*\cellW},\H);
+    \node[anchor=south] at ({(#6-0.55)*\cellW},1.35) {$j-1$};
+  \fi
+
+  % Note text
+  \node[anchor=west] at ({\n*\cellW+0.4},0.5*\H) {#7};
+\end{tikzpicture}\par\vspace{0.4cm}
+}
+
+% ---------- Steps ----------
+\ArrayStep{2}{3}{4}{1}{6}{-1}{Initial array}
+
+\ArrayStep{2}{3}{4}{1}{6}{1}{Compare $a[1]$ and $a[0]$ (no swap)}
+
+\ArrayStep{2}{3}{4}{1}{6}{2}{Compare $a[2]$ and $a[1]$ (no swap)}
+
+\ArrayStep{2}{3}{4}{1}{6}{3}{$1 < 4$, swap $a[3]$ and $a[2]$}
+
+\ArrayStep{2}{3}{1}{4}{6}{2}{$1 < 3$, swap $a[2]$ and $a[1]$}
+
+\ArrayStep{2}{1}{3}{4}{6}{1}{$1 < 2$, swap $a[1]$ and $a[0]$}
+
+\ArrayStep{1}{2}{3}{4}{6}{0}{Stop ($j=0$)}
+
+\ArrayStep{1}{2}{3}{4}{6}{4}{Compare $a[4]$ and $a[3]$ (no swap, done)}
+
+\subsection{Insertion Sort Code (Java)}
+\begin{verbatim}
+void insertionSort(int[] a) {
+    int n = a.length;
+
+    for (int i = 1; i < n; i++) {
+        int j = i;
+
+        // swap left while out of order
+        while (j > 0 && a[j] < a[j - 1]) {
+            int temp = a[j];
+            a[j] = a[j - 1];
+            a[j - 1] = temp;
+            j--;
+        }
+    }
+}
+\end{verbatim}
+
+\subsection{Time Complexity}
+\begin{itemize}
+  \item \textbf{Best case:} $O(n)$ (already sorted)
+  \item \textbf{Worst case:} $O(n^2)$ (reverse sorted)
+  \item \textbf{Average case:} $O(n^2)$
+  \item \textbf{Space:} $O(1)$ (in-place)
+\end{itemize}

@@ -1,0 +1,334 @@
+\section{Merge Sort}
+
+\textbf{Idea:} Merge sort is a \textbf{divide and conquer} algorithm.  
+We split the array into halves until each subarray has size $1$, then merge sorted halves back together.
+
+% =========================================================
+% Diagram 1: Split tree (match video: [3 2 4] | [1 6])
+% =========================================================
+\subsection{Visualization (Split)}
+Example: \([3,2,4,1,6]\)
+
+\begin{center}
+\begin{tikzpicture}[x=1cm,y=1cm,>=Stealth]
+
+% ----- helper: draw array with exact length -----
+% \Arr{name}{x}{y}{n}{v1}{v2}{v3}{v4}{v5}
+\newcommand{\Arr}[9]{%
+  \def\cellW{1.1}\def\H{0.75}
+  \coordinate (#1-center) at ({#2 + 0.5*#4*\cellW},{#3 + 0.5*\H});
+  \coordinate (#1-north)  at ({#2 + 0.5*#4*\cellW},{#3 + \H});
+  \coordinate (#1-south)  at ({#2 + 0.5*#4*\cellW},{#3});
+  \draw[line width=1.1pt] (#2,#3) rectangle ({#2 + #4*\cellW}, {#3+\H});
+  \foreach \k in {1,...,10} {
+    \ifnum\k<#4
+      \draw[line width=1.1pt] ({#2+\k*\cellW},#3) -- ({#2+\k*\cellW},{#3+\H});
+    \fi
+  }
+  \ifnum#4>0 \node at ({#2+0.5*\cellW},{#3+0.5*\H}) {#5};\fi
+  \ifnum#4>1 \node at ({#2+1.5*\cellW},{#3+0.5*\H}) {#6};\fi
+  \ifnum#4>2 \node at ({#2+2.5*\cellW},{#3+0.5*\H}) {#7};\fi
+  \ifnum#4>3 \node at ({#2+3.5*\cellW},{#3+0.5*\H}) {#8};\fi
+  \ifnum#4>4 \node at ({#2+4.5*\cellW},{#3+0.5*\H}) {#9};\fi
+}
+
+% Level 0
+\Arr{A0}{3.2}{6.0}{5}{3}{2}{4}{1}{6}
+
+% Level 1 (match video split)
+\Arr{L1}{2.0}{4.4}{3}{3}{2}{4}{}{}
+\Arr{R1}{7.0}{4.4}{2}{1}{6}{}{}{}
+
+% clean arrows (do not touch boxes)
+\draw[->,thick,shorten >=4pt,shorten <=4pt] (A0-south) to[out=-90,in=90] (L1-north);
+\draw[->,thick,shorten >=4pt,shorten <=4pt] (A0-south) to[out=-90,in=90] (R1-north);
+
+% Level 2
+\Arr{L2a}{1.2}{2.8}{2}{3}{2}{}{}{}
+\Arr{L2b}{4.6}{2.8}{1}{4}{}{}{}{}
+
+\Arr{R2a}{6.6}{2.8}{1}{1}{}{}{}{}
+\Arr{R2b}{8.8}{2.8}{1}{6}{}{}{}{}
+
+\draw[->,thick,shorten >=4pt,shorten <=4pt] (L1-south) to[out=-90,in=90] (L2a-north);
+\draw[->,thick,shorten >=4pt,shorten <=4pt] (L1-south) to[out=-90,in=90] (L2b-north);
+
+\draw[->,thick,shorten >=4pt,shorten <=4pt] (R1-south) to[out=-90,in=90] (R2a-north);
+\draw[->,thick,shorten >=4pt,shorten <=4pt] (R1-south) to[out=-90,in=90] (R2b-north);
+
+% -------- ADDITION: split [3,2] into [3] and [2] --------
+\Arr{L3a}{0.6}{1.2}{1}{3}{}{}{}{}
+\Arr{L3b}{2.0}{1.2}{1}{2}{}{}{}{}
+
+\draw[->,thick,shorten >=4pt,shorten <=4pt] (L2a-south) to[out=-90,in=90] (L3a-north);
+\draw[->,thick,shorten >=4pt,shorten <=4pt] (L2a-south) to[out=-90,in=90] (L3b-north);
+% --------------------------------------------------------
+
+\end{tikzpicture}
+\end{center}
+
+% =========================================================
+% Diagram 2: Merge process (ALL steps, like your previous one)
+% =========================================================
+\subsection{Visualization (Merge)}
+We merge sorted halves using three pointers:
+$i$ (left), $j$ (right), and $k$ (write index).
+
+% =========================================================
+% Merge row for [2,3] | [4] -> out[3]
+% =========================================================
+\newcommand{\MergeA}[7]{%
+\noindent\begin{tikzpicture}[x=1cm,y=1cm,>=Stealth]
+  \def\cellW{1.05}\def\H{0.65}
+
+  % L = [2,3]
+  \draw[line width=1pt] (0,0) rectangle (2*\cellW,\H);
+  \draw[line width=1pt] (\cellW,0) -- (\cellW,\H);
+  \node at (0.5*\cellW,0.5*\H) {2};
+  \node at (1.5*\cellW,0.5*\H) {3};
+  \node[anchor=east] at (-0.25,0.5*\H) {$L$};
+
+  % R = [4]
+  \begin{scope}[shift={(3.0,0)}]
+    \draw[line width=1pt] (0,0) rectangle (\cellW,\H);
+    \node at (0.5*\cellW,0.5*\H) {4};
+    \node[anchor=east] at (-0.25,0.5*\H) {$R$};
+  \end{scope}
+
+  % out (3 cells)
+  \begin{scope}[shift={(5.5,0)}]
+    \draw[line width=1pt] (0,0) rectangle (3*\cellW,\H);
+    \draw[line width=1pt] (\cellW,0) -- (\cellW,\H);
+    \draw[line width=1pt] (2*\cellW,0) -- (2*\cellW,\H);
+    \node at (0.5*\cellW,0.5*\H) {#1};
+    \node at (1.5*\cellW,0.5*\H) {#2};
+    \node at (2.5*\cellW,0.5*\H) {#3};
+    \node[anchor=east] at (-0.25,0.5*\H) {$out$};
+  \end{scope}
+
+  % pointers
+  \ifnum#4>-1
+    \draw[->,thick,shorten >=2pt,shorten <=2pt] ({(#4+0.5)*\cellW},1.05) -- ({(#4+0.5)*\cellW},\H);
+    \node[anchor=south] at ({(#4+0.5)*\cellW},1.05) {$i$};
+  \fi
+  \ifnum#5>-1
+    \draw[->,thick,shorten >=2pt,shorten <=2pt] ({3.0+(#5+0.5)*\cellW},1.05) -- ({3.0+(#5+0.5)*\cellW},\H);
+    \node[anchor=south] at ({3.0+(#5+0.5)*\cellW},1.05) {$j$};
+  \fi
+  \ifnum#6>-1
+    \draw[->,thick,shorten >=2pt,shorten <=2pt] ({5.5+(#6+0.5)*\cellW},1.05) -- ({5.5+(#6+0.5)*\cellW},\H);
+    \node[anchor=south] at ({5.5+(#6+0.5)*\cellW},1.05) {$k$};
+  \fi
+
+  % caption below
+  \node[anchor=west] at (0,-0.35) {#7};
+\end{tikzpicture}\par\vspace{0.25cm}
+}
+
+% =========================================================
+% Merge row for [3] | [2] -> out[2]
+% =========================================================
+\newcommand{\MergeB}[6]{%
+\noindent\begin{tikzpicture}[x=1cm,y=1cm,>=Stealth]
+  \def\cellW{1.05}\def\H{0.65}
+
+  % L = [3]
+  \draw[line width=1pt] (0,0) rectangle (\cellW,\H);
+  \node at (0.5*\cellW,0.5*\H) {3};
+  \node[anchor=east] at (-0.25,0.5*\H) {$L$};
+
+  % R = [2]
+  \begin{scope}[shift={(2.2,0)}]
+    \draw[line width=1pt] (0,0) rectangle (\cellW,\H);
+    \node at (0.5*\cellW,0.5*\H) {2};
+    \node[anchor=east] at (-0.25,0.5*\H) {$R$};
+  \end{scope}
+
+  % out (2)
+  \begin{scope}[shift={(4.6,0)}]
+    \draw[line width=1pt] (0,0) rectangle (2*\cellW,\H);
+    \draw[line width=1pt] (\cellW,0) -- (\cellW,\H);
+    \node at (0.5*\cellW,0.5*\H) {#1};
+    \node at (1.5*\cellW,0.5*\H) {#2};
+    \node[anchor=east] at (-0.25,0.5*\H) {$out$};
+  \end{scope}
+
+  % pointers
+  \ifnum#3>-1
+    \draw[->,thick,shorten >=2pt,shorten <=2pt] ({(#3+0.5)*\cellW},1.05) -- ({(#3+0.5)*\cellW},\H);
+    \node[anchor=south] at ({(#3+0.5)*\cellW},1.05) {$i$};
+  \fi
+  \ifnum#4>-1
+    \draw[->,thick,shorten >=2pt,shorten <=2pt] ({2.2+(#4+0.5)*\cellW},1.05) -- ({2.2+(#4+0.5)*\cellW},\H);
+    \node[anchor=south] at ({2.2+(#4+0.5)*\cellW},1.05) {$j$};
+  \fi
+  \ifnum#5>-1
+    \draw[->,thick,shorten >=2pt,shorten <=2pt] ({4.6+(#5+0.5)*\cellW},1.05) -- ({4.6+(#5+0.5)*\cellW},\H);
+    \node[anchor=south] at ({4.6+(#5+0.5)*\cellW},1.05) {$k$};
+  \fi
+
+  % caption below
+  \node[anchor=west] at (0,-0.35) {#6};
+\end{tikzpicture}\par\vspace{0.25cm}
+}
+
+% =========================================================
+% Final merge row for [2,3,4] | [1,6] -> out[5]
+% =========================================================
+\newcommand{\MergeC}[9]{%
+\noindent\begin{tikzpicture}[x=1cm,y=1cm,>=Stealth]
+  \def\cellW{1.05}\def\H{0.65}
+  \def\Rshift{4.4}
+  \def\OutShift{8.0}
+
+  % L = [2,3,4]
+  \draw[line width=1pt] (0,0) rectangle (3*\cellW,\H);
+  \draw[line width=1pt] (\cellW,0) -- (\cellW,\H);
+  \draw[line width=1pt] (2*\cellW,0) -- (2*\cellW,\H);
+  \node at (0.5*\cellW,0.5*\H) {2};
+  \node at (1.5*\cellW,0.5*\H) {3};
+  \node at (2.5*\cellW,0.5*\H) {4};
+  \node[anchor=east] at (-0.25,0.5*\H) {$L$};
+
+  % R = [1,6]
+  \begin{scope}[shift={(\Rshift,0)}]
+    \draw[line width=1pt] (0,0) rectangle (2*\cellW,\H);
+    \draw[line width=1pt] (\cellW,0) -- (\cellW,\H);
+    \node at (0.5*\cellW,0.5*\H) {1};
+    \node at (1.5*\cellW,0.5*\H) {6};
+    \node[anchor=east] at (-0.25,0.5*\H) {$R$};
+  \end{scope}
+
+  % out (5)
+  \begin{scope}[shift={(\OutShift,0)}]
+    \draw[line width=1pt] (0,0) rectangle (5*\cellW,\H);
+    \foreach \t in {1,...,4} { \draw[line width=1pt] (\t*\cellW,0) -- (\t*\cellW,\H); }
+    \node at (0.5*\cellW,0.5*\H) {#1};
+    \node at (1.5*\cellW,0.5*\H) {#2};
+    \node at (2.5*\cellW,0.5*\H) {#3};
+    \node at (3.5*\cellW,0.5*\H) {#4};
+    \node at (4.5*\cellW,0.5*\H) {#5};
+    \node[anchor=east] at (-0.25,0.5*\H) {$out$};
+  \end{scope}
+
+  % pointers (hide when index is -1)
+  \ifnum#6>-1
+    \draw[->,thick,shorten >=2pt,shorten <=2pt] ({(#6+0.5)*\cellW},1.05) -- ({(#6+0.5)*\cellW},\H);
+    \node[anchor=south] at ({(#6+0.5)*\cellW},1.05) {$i$};
+  \fi
+
+  \ifnum#7>-1
+    \draw[->,thick,shorten >=2pt,shorten <=2pt] ({\Rshift+(#7+0.5)*\cellW},1.05) -- ({\Rshift+(#7+0.5)*\cellW},\H);
+    \node[anchor=south] at ({\Rshift+(#7+0.5)*\cellW},1.05) {$j$};
+  \fi
+
+  \ifnum#8>-1
+    \draw[->,thick,shorten >=2pt,shorten <=2pt] ({\OutShift+(#8+0.5)*\cellW},1.05) -- ({\OutShift+(#8+0.5)*\cellW},\H);
+    \node[anchor=south] at ({\OutShift+(#8+0.5)*\cellW},1.05) {$k$};
+  \fi
+
+  % caption below
+  \node[anchor=west] at (0,-0.35) {#9};
+\end{tikzpicture}\par\vspace{0.25cm}
+}
+
+% =========================================================
+% MERGE STEPS
+% =========================================================
+
+\textbf{Merge 1:} \([3] \mid [2] \rightarrow [2,3]\)
+
+\MergeB{}{}{0}{0}{0}{Compare 3 vs 2 $\Rightarrow$ write 2}
+\MergeB{2}{}{0}{-1}{1}{Right empty $\Rightarrow$ copy left}
+\MergeB{2}{3}{-1}{-1}{-1}{Done}
+
+\vspace{0.2cm}
+
+\textbf{Merge 2:} \([2,3] \mid [4] \rightarrow [2,3,4]\)
+
+\MergeA{}{}{}{0}{0}{0}{Compare 2 vs 4 $\Rightarrow$ write 2}
+\MergeA{2}{}{}{1}{0}{1}{Compare 3 vs 4 $\Rightarrow$ write 3}
+\MergeA{2}{3}{}{-1}{0}{2}{Left empty $\Rightarrow$ copy right}
+\MergeA{2}{3}{4}{-1}{-1}{-1}{Done}
+
+\vspace{0.2cm}
+
+\textbf{Merge 3:} \([1] \mid [6] \rightarrow [1,6]\) 
+
+\textbf{Final merge:} \([2,3,4] \mid [1,6] \rightarrow [1,2,3,4,6]\)
+
+\MergeC{}{}{}{}{}{0}{0}{0}{Compare 2 vs 1 $\Rightarrow$ write 1}
+\MergeC{1}{}{}{}{}{0}{1}{1}{Compare 2 vs 6 $\Rightarrow$ write 2}
+\MergeC{1}{2}{}{}{}{1}{1}{2}{Compare 3 vs 6 $\Rightarrow$ write 3}
+\MergeC{1}{2}{3}{}{}{2}{1}{3}{Compare 4 vs 6 $\Rightarrow$ write 4}
+\MergeC{1}{2}{3}{4}{}{-1}{1}{4}{Left empty $\Rightarrow$ copy right}
+\MergeC{1}{2}{3}{4}{6}{-1}{-1}{-1}{Done}
+
+\subsection{Merge Sort Code (Java)}
+\begin{verbatim}
+void mergeSort(int[] arr, int s, int e) {
+    if (e - s + 1 <= 1) {
+        return;   // size <= 1
+    }
+
+    int m = (s + e) / 2;
+    mergeSort(arr, s, m);       // sort left half
+    mergeSort(arr, m + 1, e);   // sort right half
+
+    merge(arr, s, m, e);        // merge sorted halves
+}
+
+void merge(int[] arr, int s, int m, int e) {
+    int[] L = new int[m - s + 1];
+    int[] R = new int[e - m];
+
+    for (int x = 0; x < L.length; x++) {
+        L[x] = arr[s + x];
+    }
+    for (int x = 0; x < R.length; x++) {
+        R[x] = arr[m + 1 + x];
+    }
+
+    int i = 0;    // pointer for L
+    int j = 0;    // pointer for R
+    int k = s;    // write pointer for arr
+
+    while (i < L.length && j < R.length) {  // Merge back into arr
+        if (L[i] <= R[j]) {
+            arr[k] = L[i];
+            i++;
+        } else {
+            arr[k] = R[j];
+            j++;
+        }
+        k++;
+    }
+
+    while (i < L.length) {  // Copy remaining from left half
+        arr[k] = L[i];
+        i++;
+        k++;
+    }
+
+    while (j < R.length) {  // Copy remaining from right half
+        arr[k] = R[j];
+        j++;
+        k++;
+    }
+}
+\end{verbatim}
+
+
+\subsection{Time Complexity}
+\begin{itemize}
+  \item Splitting creates $\log n$ levels (divide by 2 each time)
+  \item Each level uses $n$ time to sort
+  \item Total: \textbf{$O(n\log n)$}
+\end{itemize}
+
+\subsection{Space Complexity}
+\begin{itemize}
+  \item Temporary arrays during merge: $O(n)$
+  \item Recursion depth: $O(\log n)$
+  \item Overall extra space: \textbf{$O(n)$}
+\end{itemize}

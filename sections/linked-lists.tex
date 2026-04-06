@@ -1,0 +1,121 @@
+\section{Linked Lists}
+
+A \textbf{singly linked list} is a linear data structure made of \textbf{nodes}.  
+Each node stores:
+\begin{itemize}
+  \item a value (data)
+  \item a pointer/reference to the next node
+\end{itemize}
+
+The last node points to \texttt{null}.
+
+\begin{figure}[h]
+\centering
+\begin{tikzpicture}[
+  >=Stealth,
+  pointer/.style={->, thick}
+]
+
+% --- Node drawing helper: (x,y), title, value, next ---
+\newcommand{\ListNode}[5]{%
+  % Outer box
+  \draw[thick] (#1,#2) rectangle ++(4,2);
+
+  % Header divider
+  \draw[thick] (#1,#2+1.3) -- ++(4,0);
+
+  % Body vertical divider (value | next)
+  \draw[thick] (#1+2.4,#2) -- ++(0,1.3);
+
+  % Header text
+  \node at (#1+2,#2+1.65) {\textbf{#3}};
+
+  % Value / Next text
+  \node at (#1+1.2,#2+0.65) {#4};
+  \node at (#1+3.2,#2+0.65) {#5};
+}
+
+% --- Draw nodes ---
+\ListNode{0}{0}{Node1}{red}{}
+\ListNode{5.2}{0}{Node2}{blue}{}
+\ListNode{10.4}{0}{Node3}{green}{null}
+
+% --- Straight arrows (from next-field center to next node) ---
+\draw[pointer] (4,0.65) -- (5.2,0.65);
+\draw[pointer] (9.2,0.65) -- (10.4,0.65);
+
+\end{tikzpicture}
+\caption{A singly linked list where each node points to the next node}
+\end{figure}
+
+
+
+\subsection{Memory Layout}
+Unlike arrays, linked lists are \textbf{not stored contiguously in memory}.  
+Nodes can be located anywhere in memory and are connected using pointers.
+
+\subsection{Structure}
+\begin{itemize}
+  \item \textbf{Head}: first node in the list
+  \item \textbf{Tail}: last node in the list (points to \texttt{null})
+\end{itemize}
+
+
+\subsection{Traversal}
+To iterate through a linked list:
+\begin{verbatim}
+curr = head
+while (curr != null):
+    curr = curr.next
+\end{verbatim}
+Traversal takes $O(n)$ time, where $n$ is the number of nodes.
+
+\subsection{Insertion and Deletion}
+
+\textbf{Inserting a node (given previous node)}
+\begin{verbatim}
+    newNode.next = prev.next
+    prev.next = newNode
+\end{verbatim}
+\textbf{Deleting a node (given previous node):}
+\begin{verbatim}
+    prev.next = prev.next.next
+\end{verbatim}
+\textbf{Inserting before the head:}
+\begin{verbatim}
+    newNode.next = head
+    head = newNode
+\end{verbatim}
+\textbf{Deleting the head:}
+\begin{verbatim}
+    head = head.next
+\end{verbatim}
+
+Inserting or deleting a node itself is $O(1)$, but finding the previous node takes $O(n)$ due to the lack of random access, so the overall operation is $O(n)$ if a search is required.
+
+\subsection{Time Complexity}
+
+\begin{center}
+\begin{tabular}{l c}
+\toprule
+\textbf{Operation} & \textbf{Time Complexity} \\
+\midrule
+Access by index & $O(n)$ \\
+Insert at head & $O(1)$ \\
+Insert at tail & $O(1)$ (with tail pointer) \\
+Insert in middle & $O(n)$ \\
+Delete at head & $O(1)$ \\
+Delete at tail & $O(n)$ \\
+Delete in middle & $O(n)$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsection{Doubly Linked Lists}
+In a \textbf{doubly linked list}, each node stores two pointers:
+\begin{itemize}
+  \item \texttt{next}: points to the next node
+  \item \texttt{prev}: points to the previous node
+\end{itemize}
+
+This allows traversals forwards or backwards and enables insertions and deletions to be performed without needing to find the previous node, resulting in $O(1)$ when deleting at the end. Insertions/Deletions in the middle of the list are still $O(n)$, as we still need to access the i-th element.

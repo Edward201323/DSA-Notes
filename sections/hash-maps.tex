@@ -1,0 +1,285 @@
+\section{Hash Maps}
+
+A \textbf{hash map} stores \textbf{(key, value)} pairs and supports fast lookup by key.  
+In a hash map, insert/search/remove are \textbf{$O(1)$}. Hash maps do \textbf{not maintain any order}, so the physical placement of keys in the table has no relation to insertion order or sorted order.
+
+\subsection{Core Idea}
+A hash map is implemented using an \textbf{array}. 
+A \textbf{hash function} converts a key into an integer index:
+\[
+\text{index} = h(\text{key}) \bmod m
+\]
+where $m$ is the table size.
+
+The same key always hashes to the same index.
+
+\subsection{Example Hash Function}
+An example of a hash function for strings:
+\begin{itemize}
+  \item sum ASCII values of characters
+  \item mod by table size to stay in bounds
+\end{itemize}
+
+\begin{verbatim}
+int hash(String key, int tableSize) {
+    int sum = 0;
+    for (char c : key.toCharArray()) {
+        sum += c;
+    }
+    return sum % tableSize;
+}
+\end{verbatim}
+
+\subsection{Step-by-Step Insertion Example (Open Addressing)}
+
+Initial table size: $m = 2$ (indices 0 and 1)
+
+\begin{center}
+\begin{tabular}{c c}
+\toprule
+Index & Value \\
+\midrule
+0 & -- \\
+1 & -- \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\textbf{Insert:} \texttt{("Alice", "NYC")}  
+Assume $\text{hash(Alice)} = 25 \Rightarrow 25 \bmod 2 = 1$
+
+\begin{center}
+\begin{tabular}{c c}
+\toprule
+Index & Value \\
+\midrule
+0 & -- \\
+1 & (Alice, NYC) \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+The table is now half full $\Rightarrow$ \textbf{resize and rehash}. We do this to reduce collisions, keeping insert, search, and remove $O(1)$ time.
+
+\subsection{Rehashing (after resize to size 4)}
+Recompute all indices using new size $m = 4$.
+
+\[
+25 \bmod 4 = 1
+\]
+
+\begin{center}
+\begin{tabular}{c c}
+\toprule
+Index & Value \\
+\midrule
+0 & -- \\
+1 & (Alice, NYC) \\
+2 & -- \\
+3 & -- \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\textbf{Insert:} \texttt{("Brad", "Chicago")}  
+Assume hash = 27, $27 \bmod 4 = 3$
+
+\begin{center}
+\begin{tabular}{c c}
+\toprule
+Index & Value \\
+\midrule
+0 & -- \\
+1 & (Alice, NYC) \\
+2 & -- \\
+3 & (Brad, Chicago) \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+The table is now half full again $\Rightarrow$ \textbf{resize and rehash}.  
+
+\subsection{Rehashing (after resize to size 8)}
+Recompute all indices using new size $m = 8$.
+
+\[
+25 \bmod 8 = 1,\quad 27 \bmod 8 = 3
+\]
+
+\begin{center}
+\begin{tabular}{c c}
+\toprule
+Index & Value \\
+\midrule
+0 & -- \\
+1 & (Alice, NYC) \\
+2 & -- \\
+3 & (Brad, Chicago) \\
+4 & -- \\
+5 & -- \\
+6 & -- \\
+7 & -- \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsection{Collision Example (Open Addressing)}
+\textbf{Insert:} \texttt{("Collin", "Seattle")}  
+Assume hash = 33, $33 \bmod 8 = 1$ $\Rightarrow$ collision with Alice. In this example, we handle collisions with \textbf{open addressing}, where we find the next empty slot in the array so that multiple keys can still be stored even when they hash to the same index. Other collision-handling strategies exist, such as \textbf{chaining}, where each index stores a linked list of key–value pairs instead of using probing.
+
+
+\begin{itemize}
+  \item index 1 is occupied
+  \item try index 2 (empty)
+\end{itemize}
+
+\begin{center}
+\begin{tabular}{c c}
+\toprule
+Index & Value \\
+\midrule
+0 & -- \\
+1 & (Alice, NYC) \\
+2 & (Collin, Seattle) \\
+3 & (Brad, Chicago) \\
+4 & -- \\
+5 & -- \\
+6 & -- \\
+7 & -- \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsection{Search Example (After Collision)}
+
+Because collisions push elements forward, search must also \textbf{probe forward} until the key is found or an empty slot is reached.
+
+\begin{verbatim}
+get(key):
+    index = h(key) % m
+    while table[index] is not empty:
+        if table[index].key == key:
+            return table[index].value
+        index = (index + 1) % m   // linear probing
+    return NOT_FOUND
+\end{verbatim}
+
+\subsubsection*{Example 1: Key Found}
+Search for \texttt{"Collin"}:
+
+\begin{itemize}
+  \item hash("Collin") = 33 $\Rightarrow 33 \bmod 8 = 1$
+  \item index 1 contains Alice $\Rightarrow$ not a match
+  \item probe next index (2)
+  \item index 2 contains Collin $\Rightarrow$ found
+\end{itemize}
+
+\[
+\text{get("Collin")} = \text{"Seattle"}
+\]
+
+\subsubsection*{Example 2: Key Not Found}
+Search for \texttt{"Daniel"} (assume it also hashes to index 1 for this example):
+
+\begin{itemize}
+  \item start at index 1
+  \item index 1: Alice (not match)
+  \item index 2: Collin (not match)
+  \item index 3: Brad (not match)
+  \item index 4: empty slot reached $\Rightarrow$ stop
+\end{itemize}
+
+\[
+\text{get("Daniel")} = \text{NOT\_FOUND}
+\]
+
+Reaching an empty slot means the key does not exist, since insertion would have stopped there.
+
+\subsection{Duplicate Key (Overwrite)}
+Keys are typically \textbf{unique} (no duplicate keys). Inserting an existing key usually \textbf{overwrites} its value.
+
+Insert \texttt{("Alice", "Boston")}:
+
+\begin{itemize}
+  \item hash gives index 1
+  \item key already exists
+  \item value is overwritten
+\end{itemize}
+
+\begin{center}
+\begin{tabular}{c c}
+\toprule
+Index & Value \\
+\midrule
+0 & -- \\
+1 & (Alice, Boston) \\
+2 & (Collin, Seattle) \\
+3 & (Brad, Chicago) \\
+4 & -- \\
+5 & -- \\
+6 & -- \\
+7 & -- \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsection{Deletion + Tombstones (Open Addressing)}
+With open addressing, we \textbf{cannot} delete by setting a slot to empty (\texttt{--}), because that can break the probe chain and cause searches to stop early.  
+Instead, we mark deleted slots with a \textbf{tombstone} (e.g. \texttt{DEL}).
+
+\subsubsection*{Tombstone Example}
+\textbf{Remove:} \texttt{"Brad"} (at index 3) $\Rightarrow$ mark as \texttt{DEL} (tombstone), not empty.
+
+\begin{center}
+\begin{tabular}{c c}
+\toprule
+Index & Value \\
+\midrule
+0 & -- \\
+1 & (Alice, Boston) \\
+2 & (Collin, Seattle) \\
+3 & DEL \\
+4 & -- \\
+5 & -- \\
+6 & -- \\
+7 & -- \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\textbf{How search changes:}
+\begin{itemize}
+  \item \texttt{DEL} means ``keep probing'' (key might be later in the chain)
+  \item \texttt{--} means ``stop'' (key does not exist)
+\end{itemize}
+
+\textbf{How insert changes:}
+\begin{itemize}
+  \item \texttt{DEL} can be reused as an insertion spot
+\end{itemize}
+
+\begin{verbatim}
+get(key):
+    idx = h(key) % m
+    while table[idx] != EMPTY:
+        if table[idx] != DEL and table[idx].key == key:
+            return table[idx].value
+        idx = (idx + 1) % m
+    return NOT_FOUND
+\end{verbatim}
+
+\subsection{Time Complexity}
+
+\begin{center}
+\begin{tabular}{l c c}
+\toprule
+\textbf{Operation} & \textbf{Average Case} & \textbf{Worst Case} \\
+\midrule
+Insert & $O(1)$ & $O(n)$ \\
+Search & $O(1)$ & $O(n)$ \\
+Remove & $O(1)$ & $O(n)$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+Worst case happens when many keys collide, forcing long probing/chains, but this is very unlikely with a good hash function and regular resizing.
