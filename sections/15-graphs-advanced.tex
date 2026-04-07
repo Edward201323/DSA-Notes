@@ -1,0 +1,230 @@
+\section{Graphs (Advanced)}
+
+\subsection{Dijkstra's Algorithm (Weighted Shortest Path)}
+
+\textbf{Dijkstra's Algorithm} is a greedy algorithm that finds the shortest path from a source vertex to \textbf{all other vertices} in a weighted graph. It uses a \textbf{min-heap (priority queue)} to always process the vertex with the smallest known distance next.
+
+\textbf{Example: shortest paths from A}
+
+\begin{center}
+\begin{tikzpicture}[
+  >=Stealth,
+  every node/.style={circle, draw, minimum size=10mm},
+  edge/.style={->, thick},
+  weight/.style={draw=none, fill=white, minimum size=0, inner sep=2pt, font=\small}
+]
+\node (A) at (0,-1.5) {A};
+\node (B) at (3,0) {B};
+\node (C) at (3,-3) {C};
+\node (D) at (6,0) {D};
+\node (E) at (6,-3) {E};
+
+\draw[edge] (A) -- node[weight, above left] {10} (B);
+\draw[edge] (A) -- node[weight, below left] {3} (C);
+\draw[edge] (B) -- node[weight, above] {2} (D);
+\draw[edge] (C) -- node[weight, left, xshift=-2pt] {4} (B);
+\draw[edge] (C) -- node[weight, below] {2} (E);
+\draw[edge] (C) -- node[weight, above left, pos=0.35] {8} (D);
+\draw[edge] (D) -- node[weight, right] {5} (E);
+\end{tikzpicture}
+\end{center}
+
+\textbf{Step 1:} Initialize heap with (0, A). Pop (0, A). Mark A with distance 0. Add neighbors: B with weight 10, C with weight 3.
+
+\begin{center}
+\begin{tikzpicture}[
+  >=Stealth,
+  every node/.style={circle, draw, minimum size=10mm},
+  edge/.style={->, thick},
+  highlight/.style={circle, draw, fill=blue!20, minimum size=10mm},
+  hedge/.style={->, thick, blue},
+  weight/.style={draw=none, fill=white, minimum size=0, inner sep=2pt, font=\small}
+]
+\node[highlight] (A) at (0,-1.5) {A};
+\node (B) at (3,0) {B};
+\node (C) at (3,-3) {C};
+\node (D) at (6,0) {D};
+\node (E) at (6,-3) {E};
+
+\draw[hedge] (A) -- node[weight, above left] {10} (B);
+\draw[hedge] (A) -- node[weight, below left] {3} (C);
+\draw[edge] (B) -- node[weight, above] {2} (D);
+\draw[edge] (C) -- node[weight, left, xshift=-2pt] {4} (B);
+\draw[edge] (C) -- node[weight, below] {2} (E);
+\draw[edge] (C) -- node[weight, above left, pos=0.35] {8} (D);
+\draw[edge] (D) -- node[weight, right] {5} (E);
+\end{tikzpicture}
+
+{\small shortest = \{A: 0\} \quad minHeap = [(3, C), (10, B)]}
+\end{center}
+
+\textbf{Step 2:} Pop (3, C) from heap. Mark C with distance 3. Add neighbors: B with weight $3+4=7$, E with weight $3+2=5$, D with weight $3+8=11$.
+
+\begin{center}
+\begin{tikzpicture}[
+  >=Stealth,
+  every node/.style={circle, draw, minimum size=10mm},
+  edge/.style={->, thick},
+  highlight/.style={circle, draw, fill=blue!20, minimum size=10mm},
+  hedge/.style={->, thick, blue},
+  weight/.style={draw=none, fill=white, minimum size=0, inner sep=2pt, font=\small}
+]
+\node[highlight] (A) at (0,-1.5) {A};
+\node (B) at (3,0) {B};
+\node[highlight] (C) at (3,-3) {C};
+\node (D) at (6,0) {D};
+\node (E) at (6,-3) {E};
+
+\draw[edge] (A) -- node[weight, above left] {10} (B);
+\draw[hedge] (A) -- node[weight, below left] {3} (C);
+\draw[edge] (B) -- node[weight, above] {2} (D);
+\draw[hedge] (C) -- node[weight, left, xshift=-2pt] {4} (B);
+\draw[hedge] (C) -- node[weight, below] {2} (E);
+\draw[hedge] (C) -- node[weight, above left, pos=0.35] {8} (D);
+\draw[edge] (D) -- node[weight, right] {5} (E);
+\end{tikzpicture}
+
+{\small shortest = \{A: 0, C: 3\} \quad minHeap = [(5, E), (7, B), (10, B), (11, D)]}
+\end{center}
+
+\textbf{Step 3:} Pop (5, E) from heap. Mark E with distance 5. E has no unvisited neighbors.
+
+\begin{center}
+\begin{tikzpicture}[
+  >=Stealth,
+  every node/.style={circle, draw, minimum size=10mm},
+  edge/.style={->, thick},
+  highlight/.style={circle, draw, fill=blue!20, minimum size=10mm},
+  hedge/.style={->, thick, blue},
+  weight/.style={draw=none, fill=white, minimum size=0, inner sep=2pt, font=\small}
+]
+\node[highlight] (A) at (0,-1.5) {A};
+\node (B) at (3,0) {B};
+\node[highlight] (C) at (3,-3) {C};
+\node (D) at (6,0) {D};
+\node[highlight] (E) at (6,-3) {E};
+
+\draw[edge] (A) -- node[weight, above left] {10} (B);
+\draw[hedge] (A) -- node[weight, below left] {3} (C);
+\draw[edge] (B) -- node[weight, above] {2} (D);
+\draw[edge] (C) -- node[weight, left, xshift=-2pt] {4} (B);
+\draw[hedge] (C) -- node[weight, below] {2} (E);
+\draw[edge] (C) -- node[weight, above left, pos=0.35] {8} (D);
+\draw[edge] (D) -- node[weight, right] {5} (E);
+\end{tikzpicture}
+
+{\small shortest = \{A: 0, C: 3, E: 5\} \quad minHeap = [(7, B), (10, B), (11, D)]}
+\end{center}
+
+\textbf{Step 4:} Pop (7, B) from heap. Mark B with distance 7. Add neighbor: D with weight $7+2=9$.
+
+\begin{center}
+\begin{tikzpicture}[
+  >=Stealth,
+  every node/.style={circle, draw, minimum size=10mm},
+  edge/.style={->, thick},
+  highlight/.style={circle, draw, fill=blue!20, minimum size=10mm},
+  hedge/.style={->, thick, blue},
+  weight/.style={draw=none, fill=white, minimum size=0, inner sep=2pt, font=\small}
+]
+\node[highlight] (A) at (0,-1.5) {A};
+\node[highlight] (B) at (3,0) {B};
+\node[highlight] (C) at (3,-3) {C};
+\node (D) at (6,0) {D};
+\node[highlight] (E) at (6,-3) {E};
+
+\draw[edge] (A) -- node[weight, above left] {10} (B);
+\draw[hedge] (A) -- node[weight, below left] {3} (C);
+\draw[hedge] (B) -- node[weight, above] {2} (D);
+\draw[hedge] (C) -- node[weight, left, xshift=-2pt] {4} (B);
+\draw[edge] (C) -- node[weight, below] {2} (E);
+\draw[edge] (C) -- node[weight, above left, pos=0.35] {8} (D);
+\draw[edge] (D) -- node[weight, right] {5} (E);
+\end{tikzpicture}
+
+{\small shortest = \{A: 0, C: 3, E: 5, B: 7\} \quad minHeap = [(9, D), (10, B), (11, D)]}
+\end{center}
+
+\textbf{Step 5:} Pop (9, D) from heap. Mark D with distance 9. D's neighbor E is already in shortest. Remaining heap entries (10, B) and (11, D) are skipped since both are already in shortest. Done.
+
+\begin{center}
+\begin{tikzpicture}[
+  >=Stealth,
+  every node/.style={circle, draw, minimum size=10mm},
+  edge/.style={->, thick},
+  found/.style={circle, draw, fill=green!20, minimum size=10mm},
+  hedge/.style={->, thick, blue},
+  weight/.style={draw=none, fill=white, minimum size=0, inner sep=2pt, font=\small}
+]
+\node[found] (A) at (0,-1.5) {A};
+\node[found] (B) at (3,0) {B};
+\node[found] (C) at (3,-3) {C};
+\node[found] (D) at (6,0) {D};
+\node[found] (E) at (6,-3) {E};
+
+\draw[edge] (A) -- node[weight, above left] {10} (B);
+\draw[hedge] (A) -- node[weight, below left] {3} (C);
+\draw[hedge] (B) -- node[weight, above] {2} (D);
+\draw[hedge] (C) -- node[weight, left, xshift=-2pt] {4} (B);
+\draw[hedge] (C) -- node[weight, below] {2} (E);
+\draw[edge] (C) -- node[weight, above left, pos=0.35] {8} (D);
+\draw[edge] (D) -- node[weight, right] {5} (E);
+\end{tikzpicture}
+
+{\small shortest = \{A: 0, B: 7, C: 3, D: 9, E: 5\}}
+\end{center}
+
+\textbf{Result:} shortest = \{A: 0, B: 7, C: 3, D: 9, E: 5\}
+
+To implement this, we use the following code:
+
+\begin{verbatim}
+public class Dijkstra {
+    Map<String, List<int[]>> adj;
+
+    public Dijkstra(Map<String, List<int[]>> adj) {
+        this.adj = adj;
+    }
+
+    public Map<String, Integer> shortestPath(String src) {
+        Map<String, Integer> shortest = new HashMap<>();
+        PriorityQueue<int[]> minHeap = new PriorityQueue<>((a, b) -> a[0] - b[0]);
+        minHeap.add(new int[]{0, src});
+
+        while (!minHeap.isEmpty()) {
+            int[] curr = minHeap.poll();
+            int w1 = curr[0];
+            String n1 = curr[1];
+
+            if (shortest.containsKey(n1)) continue;
+            shortest.put(n1, w1);
+
+            for (int[] edge : adj.get(n1)) {
+                String n2 = edge[0];
+                int w2 = edge[1];
+                if (!shortest.containsKey(n2)) {
+                    minHeap.add(new int[]{w1 + w2, n2});
+                }
+            }
+        }
+        return shortest;
+    }
+}
+\end{verbatim}
+
+\begin{itemize}
+  \item \texttt{shortest}: maps each vertex to its shortest distance from the source
+  \item \texttt{minHeap}: always processes the vertex with the smallest total weight next
+  \item If a vertex is already in \texttt{shortest}, we skip it --- its shortest distance is already known
+\end{itemize}
+\textbf{Time Complexity:}
+Each edge may add an entry to the heap, giving up to $E$ insertions. 
+
+Pushing and popping from a heap costs $O(\log (E))$, since the heap can hold at most $E$ entries. This gives a total runtime of $O(E \log (E))$.
+
+We can simplify further: since the maximum number of edges in a graph is $V^2$, we know $E \leq V^2$. Substituting: $O(E \log (E)) \leq O(E \log (V^2)) = O(E \cdot 2\log (V))$, which is equivalent to
+
+\[
+O(E \log (V)).
+\]
+
