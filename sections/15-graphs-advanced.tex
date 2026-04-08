@@ -180,32 +180,27 @@ To implement this, we use the following code:
 
 \begin{verbatim}
 public class Dijkstra {
-    Map<String, List<int[]>> adj;
-
-    public Dijkstra(Map<String, List<int[]>> adj) {
-        this.adj = adj;
+    Map<Vertex, List<Vertex>> adjacencyList;
+    public Dijkstra(Map<Vertex, List<Vertex>> adjacencyList) {
+        this.adjacencyList = adjacencyList;
     }
-
-    public Map<String, Integer> shortestPath(String src) {
-        Map<String, Integer> shortest = new HashMap<>();
-        PriorityQueue<int[]> minHeap = new PriorityQueue<>((a, b) -> a[0] - b[0]);
-        minHeap.add(new int[]{0, src});
-
+    public Map<Vertex, Integer> shortestPath(Vertex src) {
+        Map<Vertex, Integer> shortest = new HashMap<>(); // Vertex -> shortest distance
+        PriorityQueue<Vertex> minHeap = new PriorityQueue<>();
+        minHeap.add(new Vertex(0, src)); // Start with source, distance 0
         while (!minHeap.isEmpty()) {
-            int[] curr = minHeap.poll();
-            int w1 = curr[0];
-            String n1 = curr[1];
-
-            if (shortest.containsKey(n1)) continue;
-            shortest.put(n1, w1);
-
-            for (int[] edge : adj.get(n1)) {
-                String n2 = edge[0];
-                int w2 = edge[1];
-                if (!shortest.containsKey(n2)) {
-                    minHeap.add(new int[]{w1 + w2, n2});
+            Vertex curr = minHeap.peek();
+            minHeap.remove(); // Pop vertex with smallest distance
+            if (!shortest.containsKey(curr.name)) {
+                shortest.put(curr.name, curr.weight); // Finalize shortest distance
+                for (Vertex neighbor : adjacencyList.get(curr.name)) {
+                    if (!shortest.containsKey(neighbor.name)) {
+                        // Add total accumulated distance (curr + edge weight)
+                        minHeap.add(new Vertex(curr.weight + neighbor.weight, neighbor.name));
+                    }
                 }
             }
+            // If already in shortest, skip — distance already finalized
         }
         return shortest;
     }
@@ -228,3 +223,780 @@ We can simplify further: since the maximum number of edges in a graph is $V^2$, 
 O(E \log (V)).
 \]
 
+\subsection{Prim's Algorithm (Minimum Spanning Tree)}
+
+\textbf{Prim's Algorithm} is a greedy algorithm that finds the \textbf{Minimum Spanning Tree (MST)} of a weighted graph. Like Dijkstra's, it uses a \textbf{min-heap (priority queue)}, but instead of tracking total distance from the source, it selects the \textbf{smallest edge connecting a visited vertex to an unvisited vertex}.
+
+
+\textbf{Input:} The graph must be \textbf{undirected} and \textbf{connected} (every vertex is reachable from every other vertex). The input graph may contain cycles.
+
+\textbf{Output:} An \textbf{acyclic} spanning tree that connects all vertices with the minimum total edge weight.
+
+
+\textbf{Example: MST starting from A}
+
+\begin{center}
+\begin{tikzpicture}[
+  every node/.style={circle, draw, minimum size=10mm},
+  edge/.style={-, thick},
+  weight/.style={draw=none, fill=white, minimum size=0, inner sep=2pt, font=\small}
+]
+\node (A) at (0,-1.5) {A};
+\node (B) at (3,0) {B};
+\node (C) at (3,-3) {C};
+\node (D) at (6,0) {D};
+\node (E) at (6,-3) {E};
+
+\draw[edge] (A) -- node[weight, above left] {10} (B);
+\draw[edge] (A) -- node[weight, below left] {3} (C);
+\draw[edge] (B) -- node[weight, left, xshift=-2pt] {4} (C);
+\draw[edge] (B) -- node[weight, above] {1} (D);
+\draw[edge] (C) -- node[weight, above left, pos=0.35] {4} (D);
+\draw[edge] (C) -- node[weight, below] {4} (E);
+\draw[edge] (D) -- node[weight, right] {2} (E);
+\end{tikzpicture}
+\end{center}
+
+\textbf{Step 1:} Start at A. Add A to visited. Push A's edges onto the heap: (3, A, C) and (10, A, B).
+
+\begin{center}
+\begin{tikzpicture}[
+  every node/.style={circle, draw, minimum size=10mm},
+  edge/.style={-, thick},
+  highlight/.style={circle, draw, fill=blue!20, minimum size=10mm},
+  hedge/.style={-, thick, blue},
+  weight/.style={draw=none, fill=white, minimum size=0, inner sep=2pt, font=\small}
+]
+\node[highlight] (A) at (0,-1.5) {A};
+\node (B) at (3,0) {B};
+\node (C) at (3,-3) {C};
+\node (D) at (6,0) {D};
+\node (E) at (6,-3) {E};
+
+\draw[edge] (A) -- node[weight, above left] {10} (B);
+\draw[edge] (A) -- node[weight, below left] {3} (C);
+\draw[edge] (B) -- node[weight, left, xshift=-2pt] {4} (C);
+\draw[edge] (B) -- node[weight, above] {1} (D);
+\draw[edge] (C) -- node[weight, above left, pos=0.35] {4} (D);
+\draw[edge] (C) -- node[weight, below] {4} (E);
+\draw[edge] (D) -- node[weight, right] {2} (E);
+\end{tikzpicture}
+
+{\small visited = \{A\} \quad minHeap = [(3, A, C), (10, A, B)]}
+\end{center}
+
+\textbf{Step 2:} Pop (3, A, C). C is unvisited, so add C to visited and add edge A--C to the MST. Push C's edges to unvisited neighbors: (4, C, B), (4, C, D), (4, C, E).
+
+\begin{center}
+\begin{tikzpicture}[
+  every node/.style={circle, draw, minimum size=10mm},
+  edge/.style={-, thick},
+  highlight/.style={circle, draw, fill=blue!20, minimum size=10mm},
+  hedge/.style={-, thick, blue},
+  weight/.style={draw=none, fill=white, minimum size=0, inner sep=2pt, font=\small}
+]
+\node[highlight] (A) at (0,-1.5) {A};
+\node (B) at (3,0) {B};
+\node[highlight] (C) at (3,-3) {C};
+\node (D) at (6,0) {D};
+\node (E) at (6,-3) {E};
+
+\draw[edge] (A) -- node[weight, above left] {10} (B);
+\draw[hedge] (A) -- node[weight, below left] {3} (C);
+\draw[edge] (B) -- node[weight, left, xshift=-2pt] {4} (C);
+\draw[edge] (B) -- node[weight, above] {1} (D);
+\draw[edge] (C) -- node[weight, above left, pos=0.35] {4} (D);
+\draw[edge] (C) -- node[weight, below] {4} (E);
+\draw[edge] (D) -- node[weight, right] {2} (E);
+\end{tikzpicture}
+
+{\small visited = \{A, C\} \quad minHeap = [(4, C, B), (4, C, D), (4, C, E), (10, A, B)]}
+\end{center}
+
+\textbf{Step 3:} The heap contains three entries tied at weight 4: (4, C, B), (4, C, D), and (4, C, E). We can choose any of the minimums, as they will all produce a minimum spanning tree regardless. The chosen minimum typically depends on how the algorithm is coded.
+
+In this example, we'll pop (4, C, D). D is unvisited, so add D to visited and add edge C--D to the MST. Push D's edges to unvisited neighbors: (1, D, B) and (2, D, E).
+
+\begin{center}
+\begin{tikzpicture}[
+  every node/.style={circle, draw, minimum size=10mm},
+  edge/.style={-, thick},
+  highlight/.style={circle, draw, fill=blue!20, minimum size=10mm},
+  hedge/.style={-, thick, blue},
+  weight/.style={draw=none, fill=white, minimum size=0, inner sep=2pt, font=\small}
+]
+\node[highlight] (A) at (0,-1.5) {A};
+\node (B) at (3,0) {B};
+\node[highlight] (C) at (3,-3) {C};
+\node[highlight] (D) at (6,0) {D};
+\node (E) at (6,-3) {E};
+
+\draw[edge] (A) -- node[weight, above left] {10} (B);
+\draw[hedge] (A) -- node[weight, below left] {3} (C);
+\draw[edge] (B) -- node[weight, left, xshift=-2pt] {4} (C);
+\draw[edge] (B) -- node[weight, above] {1} (D);
+\draw[hedge] (C) -- node[weight, above left, pos=0.35] {4} (D);
+\draw[edge] (C) -- node[weight, below] {4} (E);
+\draw[edge] (D) -- node[weight, right] {2} (E);
+\end{tikzpicture}
+
+{\small visited = \{A, C, D\} \quad minHeap = [(1, D, B), (2, D, E), (4, C, B), (4, C, E), (10, A, B)]}
+\end{center}
+
+\textbf{Step 4:} Pop (1, D, B). B is unvisited, so add B to visited and add edge D--B to the MST. B has no edges to unvisited neighbors (A, C, D are all visited).
+
+\begin{center}
+\begin{tikzpicture}[
+  every node/.style={circle, draw, minimum size=10mm},
+  edge/.style={-, thick},
+  highlight/.style={circle, draw, fill=blue!20, minimum size=10mm},
+  hedge/.style={-, thick, blue},
+  weight/.style={draw=none, fill=white, minimum size=0, inner sep=2pt, font=\small}
+]
+\node[highlight] (A) at (0,-1.5) {A};
+\node[highlight] (B) at (3,0) {B};
+\node[highlight] (C) at (3,-3) {C};
+\node[highlight] (D) at (6,0) {D};
+\node (E) at (6,-3) {E};
+
+\draw[edge] (A) -- node[weight, above left] {10} (B);
+\draw[hedge] (A) -- node[weight, below left] {3} (C);
+\draw[edge] (B) -- node[weight, left, xshift=-2pt] {4} (C);
+\draw[hedge] (B) -- node[weight, above] {1} (D);
+\draw[hedge] (C) -- node[weight, above left, pos=0.35] {4} (D);
+\draw[edge] (C) -- node[weight, below] {4} (E);
+\draw[edge] (D) -- node[weight, right] {2} (E);
+\end{tikzpicture}
+
+{\small visited = \{A, C, D, B\} \quad minHeap = [(2, D, E), (4, C, B), (4, C, E), (10, A, B)]}
+\end{center}
+
+\textbf{Step 5:} Pop (2, D, E). E is unvisited, so add E to visited and add edge D--E to the MST. All vertices are now visited. Remaining heap entries (4, C, B), (4, C, E), and (10, A, B) are skipped since both endpoints are already visited. Done.
+
+\begin{center}
+\begin{tikzpicture}[
+  every node/.style={circle, draw, minimum size=10mm},
+  edge/.style={-, thick},
+  found/.style={circle, draw, fill=green!20, minimum size=10mm},
+  hedge/.style={-, thick, blue},
+  weight/.style={draw=none, fill=white, minimum size=0, inner sep=2pt, font=\small}
+]
+\node[found] (A) at (0,-1.5) {A};
+\node[found] (B) at (3,0) {B};
+\node[found] (C) at (3,-3) {C};
+\node[found] (D) at (6,0) {D};
+\node[found] (E) at (6,-3) {E};
+
+\draw[edge, gray!40] (A) -- node[weight, above left] {10} (B);
+\draw[hedge] (A) -- node[weight, below left] {3} (C);
+\draw[edge, gray!40] (B) -- node[weight, left, xshift=-2pt] {4} (C);
+\draw[hedge] (B) -- node[weight, above] {1} (D);
+\draw[hedge] (C) -- node[weight, above left, pos=0.35] {4} (D);
+\draw[edge, gray!40] (C) -- node[weight, below] {4} (E);
+\draw[hedge] (D) -- node[weight, right] {2} (E);
+\end{tikzpicture}
+
+{\small MST edges: A--C (3), C--D (4), D--B (1), D--E (2) \quad Total weight = 10}
+\end{center}
+
+\textbf{Result:} The MST has edges A--C (3), C--D (4), D--B (1), D--E (2) with a total weight of \textbf{10}.
+
+To implement this, we use the following code:
+
+
+\begin{verbatim}
+public class Prim {
+    Map<String, List<Vertex>> adjacencyList;
+    public Prim(Map<String, List<Vertex>> adjacencyList) {
+        this.adjacencyList = adjacencyList;
+    }
+    public int minimumSpanningTree(String src) {
+        Set<String> visited = new HashSet<>(); // stores visted vertexes
+        PriorityQueue<Vertex> minHeap = new PriorityQueue<>();
+        int mstCost = 0;
+        // Start with the source vertex, weight 0
+        minHeap.add(new Vertex(0, src));
+        while (!minHeap.isEmpty()) {
+            // Get the smallest weight edge
+            Vertex curr = minHeap.peek();
+            minHeap.remove();
+            // Only process if vertex hasn't been visited (prevents cycles)
+            if (!visited.contains(curr.name)) {
+                visited.add(curr.name);
+                mstCost += curr.weight; // Add this edge's weight to the total MST cost
+                // Push all edges to unvisited neighbors onto the heap
+                for (Vertex neighbor : adjacencyList.get(curr.name)) {
+                    if (!visited.contains(neighbor.name)) {
+                        minHeap.add(new Vertex(neighbor.weight, neighbor.name));
+                    }
+                }
+            }
+        }
+        return mstCost;
+    }
+}
+\end{verbatim}
+
+\begin{itemize}
+  \item \texttt{visited}: tracks which vertices have been added to the MST
+  \item \texttt{minHeap}: always processes the smallest edge weight connecting a visited vertex to an unvisited vertex
+  \item If a vertex is already in \texttt{visited}, we skip it --- it is already part of the MST
+\end{itemize}
+
+\textbf{Key Difference from Dijkstra's:} In Dijkstra's, the heap stores the \textbf{total accumulated distance} from the source (i.e., \texttt{w1 + w2}). In Prim's, the heap stores only the \textbf{individual edge weight} (\texttt{w2}), because we want the cheapest single edge to grow the tree, not the cheapest total path.
+
+\textbf{Time Complexity:}
+The analysis is identical to Dijkstra's. Each edge may add an entry to the heap, giving up to $E$ insertions. Pushing and popping from a heap costs $O(\log E)$. Since $E \leq V^2$, $O(E \log E) = O(E \log V^2) = O(E \cdot 2\log V)$, which is equivalent to:
+
+\[
+O(E \log V).
+\]
+
+\subsection{Kruskal's Algorithm (Minimum Spanning Tree)}
+
+\textbf{Kruskal's Algorithm} is another greedy algorithm that finds the \textbf{Minimum Spanning Tree (MST)} of a weighted graph. Unlike Prim's, which grows the tree from a single starting vertex, Kruskal's works by sorting \textbf{all edges} by weight and adding them one by one, skipping any edge that would create a cycle.
+
+\textbf{Input:} The graph must be \textbf{undirected} and \textbf{connected}.
+
+\textbf{Output:} An \textbf{acyclic} spanning tree that connects all vertices with the minimum total edge weight.
+
+To efficiently detect cycles, Kruskal's uses a \textbf{Union-Find (Disjoint Set)} data structure. Two vertices share the same \textbf{parent} if they are in the same connected component. Before adding an edge, we check: if both endpoints already have the same parent, adding that edge would form a cycle, so we skip it.
+
+\textbf{Example: MST using Kruskal's}
+
+\begin{center}
+\begin{tikzpicture}[
+  every node/.style={circle, draw, minimum size=10mm},
+  edge/.style={-, thick},
+  weight/.style={draw=none, fill=white, minimum size=0, inner sep=2pt, font=\small}
+]
+\node (A) at (0,-1.5) {A};
+\node (B) at (3,0) {B};
+\node (C) at (3,-3) {C};
+\node (D) at (6,0) {D};
+\node (E) at (6,-3) {E};
+
+\draw[edge] (A) -- node[weight, above left] {10} (B);
+\draw[edge] (A) -- node[weight, below left] {8} (C);
+\draw[edge] (B) -- node[weight, left, xshift=-2pt] {4} (C);
+\draw[edge] (B) -- node[weight, above] {4} (D);
+\draw[edge] (C) -- node[weight, above left, pos=0.35] {4} (D);
+\draw[edge] (C) -- node[weight, below] {4} (E);
+\draw[edge] (D) -- node[weight, right] {2} (E);
+\end{tikzpicture}
+\end{center}
+
+\textbf{First,} build a min-heap from all edges:
+
+\begin{center}
+\begin{tabular}{|c|c|}
+\hline
+\textbf{Edge} & \textbf{Weight} \\
+\hline
+D--E & 2 \\
+B--C & 4 \\
+B--D & 4 \\
+C--D & 4 \\
+C--E & 4 \\
+A--C & 8 \\
+A--B & 10 \\
+\hline
+\end{tabular}
+\end{center}
+
+\textbf{Step 1:} Pop edge D--E (weight 2). D and E have different parents. Add to MST. Union D and E.
+
+\begin{center}
+\begin{tikzpicture}[
+  every node/.style={circle, draw, minimum size=10mm},
+  edge/.style={-, thick},
+  hedge/.style={-, thick, blue},
+  highlight/.style={circle, draw, fill=blue!20, minimum size=10mm},
+  weight/.style={draw=none, fill=white, minimum size=0, inner sep=2pt, font=\small}
+]
+\node (A) at (0,-1.5) {A};
+\node (B) at (3,0) {B};
+\node (C) at (3,-3) {C};
+\node[highlight] (D) at (6,0) {D};
+\node[highlight] (E) at (6,-3) {E};
+
+\draw[edge] (A) -- node[weight, above left] {10} (B);
+\draw[edge] (A) -- node[weight, below left] {8} (C);
+\draw[edge] (B) -- node[weight, left, xshift=-2pt] {4} (C);
+\draw[edge] (B) -- node[weight, above] {4} (D);
+\draw[edge] (C) -- node[weight, above left, pos=0.35] {4} (D);
+\draw[edge] (C) -- node[weight, below] {4} (E);
+\draw[hedge] (D) -- node[weight, right] {2} (E);
+\end{tikzpicture}
+
+{\small MST edges: \{D--E\} \quad Union Find = \{\{A\}, \{B\}, \{C\}, \{D, E\}\}}
+\end{center}
+
+\textbf{Step 2:} Pop edge B--C (weight 4). B and C have different parents. Add to MST. Union B and C.
+
+\begin{center}
+\begin{tikzpicture}[
+  every node/.style={circle, draw, minimum size=10mm},
+  edge/.style={-, thick},
+  hedge/.style={-, thick, blue},
+  highlight/.style={circle, draw, fill=blue!20, minimum size=10mm},
+  weight/.style={draw=none, fill=white, minimum size=0, inner sep=2pt, font=\small}
+]
+\node (A) at (0,-1.5) {A};
+\node[highlight] (B) at (3,0) {B};
+\node[highlight] (C) at (3,-3) {C};
+\node[highlight] (D) at (6,0) {D};
+\node[highlight] (E) at (6,-3) {E};
+
+\draw[edge] (A) -- node[weight, above left] {10} (B);
+\draw[edge] (A) -- node[weight, below left] {8} (C);
+\draw[hedge] (B) -- node[weight, left, xshift=-2pt] {4} (C);
+\draw[edge] (B) -- node[weight, above] {4} (D);
+\draw[edge] (C) -- node[weight, above left, pos=0.35] {4} (D);
+\draw[edge] (C) -- node[weight, below] {4} (E);
+\draw[hedge] (D) -- node[weight, right] {2} (E);
+\end{tikzpicture}
+
+{\small MST edges: \{D--E, B--C\} \quad Union Find = \{\{A\}, \{B, C\}, \{D, E\}\}}
+\end{center}
+
+\textbf{Step 3:} Pop edge B--D (weight 4). B and D have different parents. Add to MST. Union B and D.
+
+\begin{center}
+\begin{tikzpicture}[
+  every node/.style={circle, draw, minimum size=10mm},
+  edge/.style={-, thick},
+  hedge/.style={-, thick, blue},
+  highlight/.style={circle, draw, fill=blue!20, minimum size=10mm},
+  weight/.style={draw=none, fill=white, minimum size=0, inner sep=2pt, font=\small}
+]
+\node (A) at (0,-1.5) {A};
+\node[highlight] (B) at (3,0) {B};
+\node[highlight] (C) at (3,-3) {C};
+\node[highlight] (D) at (6,0) {D};
+\node[highlight] (E) at (6,-3) {E};
+
+\draw[edge] (A) -- node[weight, above left] {10} (B);
+\draw[edge] (A) -- node[weight, below left] {8} (C);
+\draw[hedge] (B) -- node[weight, left, xshift=-2pt] {4} (C);
+\draw[hedge] (B) -- node[weight, above] {4} (D);
+\draw[edge] (C) -- node[weight, above left, pos=0.35] {4} (D);
+\draw[edge] (C) -- node[weight, below] {4} (E);
+\draw[hedge] (D) -- node[weight, right] {2} (E);
+\end{tikzpicture}
+
+{\small MST edges: \{D--E, B--C, B--D\} \quad Union Find = \{\{A\}, \{B, C, D, E\}\}}
+\end{center}
+
+\textbf{Step 4:} Pop edge C--D (weight 4). C and D have the \textbf{same parent}. Adding this edge would create a cycle. \textbf{Skip.}
+
+\textbf{Step 5:} Pop edge C--E (weight 4). C and E have the \textbf{same parent}. Adding this edge would create a cycle. \textbf{Skip.}
+
+\begin{center}
+\begin{tikzpicture}[
+  every node/.style={circle, draw, minimum size=10mm},
+  edge/.style={-, thick},
+  hedge/.style={-, thick, blue},
+  highlight/.style={circle, draw, fill=blue!20, minimum size=10mm},
+  skip/.style={-, thick, red, dashed},
+  weight/.style={draw=none, fill=white, minimum size=0, inner sep=2pt, font=\small}
+]
+\node (A) at (0,-1.5) {A};
+\node[highlight] (B) at (3,0) {B};
+\node[highlight] (C) at (3,-3) {C};
+\node[highlight] (D) at (6,0) {D};
+\node[highlight] (E) at (6,-3) {E};
+
+\draw[edge] (A) -- node[weight, above left] {10} (B);
+\draw[edge] (A) -- node[weight, below left] {8} (C);
+\draw[hedge] (B) -- node[weight, left, xshift=-2pt] {4} (C);
+\draw[hedge] (B) -- node[weight, above] {4} (D);
+\draw[skip] (C) -- node[weight, above left, pos=0.35] {4} (D);
+\draw[skip] (C) -- node[weight, below] {4} (E);
+\draw[hedge] (D) -- node[weight, right] {2} (E);
+\end{tikzpicture}
+
+{\small C--D and C--E skipped (same parent, would form cycle)}
+\end{center}
+
+\textbf{Step 6:} Pop edge A--C (weight 8). A and C have different parents. Add to MST. Union A and C. All vertices are now connected. Done.
+
+\begin{center}
+\begin{tikzpicture}[
+  every node/.style={circle, draw, minimum size=10mm},
+  edge/.style={-, thick, gray!40},
+  hedge/.style={-, thick, blue},
+  found/.style={circle, draw, fill=green!20, minimum size=10mm},
+  weight/.style={draw=none, fill=white, minimum size=0, inner sep=2pt, font=\small}
+]
+\node[found] (A) at (0,-1.5) {A};
+\node[found] (B) at (3,0) {B};
+\node[found] (C) at (3,-3) {C};
+\node[found] (D) at (6,0) {D};
+\node[found] (E) at (6,-3) {E};
+
+\draw[edge] (A) -- node[weight, above left] {10} (B);
+\draw[hedge] (A) -- node[weight, below left] {8} (C);
+\draw[hedge] (B) -- node[weight, left, xshift=-2pt] {4} (C);
+\draw[hedge] (B) -- node[weight, above] {4} (D);
+\draw[edge] (C) -- node[weight, above left, pos=0.35] {4} (D);
+\draw[edge] (C) -- node[weight, below] {4} (E);
+\draw[hedge] (D) -- node[weight, right] {2} (E);
+\end{tikzpicture}
+
+{\small MST edges: D--E (2), B--C (4), B--D (4), A--C (8) \quad Total weight = 18}
+\end{center}
+
+\textbf{Result:} The MST has edges D--E (2), B--C (4), B--D (4), A--C (8) with a total weight of \textbf{18}.
+
+To implement this, we use the following code:
+\begin{verbatim}
+public class Kruskal {
+    class Edge {
+        Vertex src;
+        Vertex dst;
+        int weight;
+        Edge(Vertex src, Vertex dst, int weight) {
+            this.src = src;
+            this.dst = dst;
+            this.weight = weight;
+        }
+    }
+    public int minimumSpanningTree(List<Edge> edges, Set<Vertex> vertices) {
+        // Build min-heap from all edges (sorted by weight)
+        PriorityQueue<Edge> minHeap = new PriorityQueue<>(edges);
+        // Each vertex starts in its own component
+        UnionFind uf = new UnionFind(vertices); 
+        int mstCost = 0;
+        while (!minHeap.isEmpty()) {
+            Edge edge = minHeap.peek();
+            minHeap.remove();
+            
+            // Pop smallest weight edge
+            // If union returns true, src and dst were in different components
+            if (uf.union(edge.src, edge.dst)) {
+                mstCost += edge.weight; // Add edge to MST
+            }
+            // If false, same root — skip to avoid cycle
+        }
+        return mstCost;
+    }
+}
+\end{verbatim}
+
+\begin{itemize}
+  \item \texttt{minHeap}: a min-heap built from all edges, always pops the smallest weight edge next
+  \item \texttt{uf.union(edge.src, edge.dst)}: attempts to merge the two endpoints. If they already share the same root, it returns \texttt{false} and we skip the edge. Otherwise, it merges them and we add the edge to the MST
+\end{itemize}
+\textbf{Key Difference from Prim's:} Prim's grows the MST from a single starting vertex using a min-heap. Kruskal's considers all edges globally, building a min-heap and popping them one by one. Prim's asks ``what is the cheapest edge out of the current tree?'' while Kruskal's asks ``what is the cheapest edge overall that doesn't form a cycle?''
+\textbf{Time Complexity:}
+Building a min-heap from $E$ edges takes $O(E)$. Popping from the heap costs $O(\log E)$, and we pop at most $E$ times, giving $O(E \log E)$. Each \texttt{union} and \texttt{find} operation runs in nearly $O(1)$ amortized time. Since $E \leq V^2$:
+\[
+O(E \log E) = O(E \log V^2) = O(E \cdot 2\log V) = O(E \log V).
+\]
+
+\subsection{Topological Sort}
+
+\textbf{Topological Sort} produces a linear ordering of vertices in a directed graph such that for every edge $u \to v$, vertex $u$ appears before $v$ in the ordering.
+
+\textbf{Requirements:} The graph must be directed and acylic
+
+Note: a topological ordering is \textbf{not necessarily unique}. A graph may have multiple valid topological orderings.
+
+\textbf{Example 1: Topological sort of a connected graph}
+
+\begin{center}
+\begin{tikzpicture}[
+  >=Stealth,
+  every node/.style={circle, draw, minimum size=10mm},
+  edge/.style={->, thick}
+]
+\node (A) at (1.5,0) {A};
+\node (B) at (0,-2) {B};
+\node (C) at (3,-2) {C};
+\node (D) at (0,-4) {D};
+\node (E) at (3,-4) {E};
+\node (F) at (1.5,-6) {F};
+
+\draw[edge] (A) -- (B);
+\draw[edge] (A) -- (C);
+\draw[edge] (B) -- (D);
+\draw[edge] (C) -- (E);
+\draw[edge] (D) -- (F);
+\draw[edge] (E) -- (F);
+\end{tikzpicture}
+\end{center}
+
+\textbf{Result:} One valid topological ordering is $[A, B, C, D, E, F]$. Another valid ordering is $[A, C, E, B, D, F]$. In both cases, every vertex appears before all vertices it points to.
+
+\textbf{Example 2: Topological sort of a disconnected graph}
+
+\begin{center}
+\begin{tikzpicture}[
+  >=Stealth,
+  every node/.style={circle, draw, minimum size=10mm},
+  edge/.style={->, thick}
+]
+\node (A) at (1.5,0) {A};
+\node (B) at (0,-2) {B};
+\node (C) at (3,-2) {C};
+\node (D) at (0,-4) {D};
+\node (E) at (3,-4) {E};
+\node (F) at (1.5,-6) {F};
+
+\node (G) at (6,-1) {G};
+\node (H) at (6,-3) {H};
+
+\draw[edge] (A) -- (B);
+\draw[edge] (A) -- (C);
+\draw[edge] (B) -- (D);
+\draw[edge] (C) -- (E);
+\draw[edge] (D) -- (F);
+\draw[edge] (E) -- (F);
+\draw[edge] (G) -- (H);
+\end{tikzpicture}
+\end{center}
+
+\textbf{Result:} One valid topological ordering is $[G, A, B, C, D, E, H, F]$. The disconnected component $\{G, H\}$ can be interleaved anywhere, as long as $G$ appears before $H$ and the original constraints are preserved.
+
+\textbf{Algorithm:} We can compute a topological sort using \textbf{post-order DFS}. This produces a reverse toplogical order, so we simply reverse the output at the end.
+
+\textbf{Example: Topological sort via DFS}
+
+\textbf{Step 1:} Start DFS at A. A is unvisited. Mark A as visited. Visit first neighbor B.
+
+\begin{center}
+\begin{tikzpicture}[
+  >=Stealth,
+  every node/.style={circle, draw, minimum size=10mm},
+  edge/.style={->, thick},
+  highlight/.style={circle, draw, fill=blue!20, minimum size=10mm},
+  hedge/.style={->, thick, blue}
+]
+\node[highlight] (A) at (1.5,0) {A};
+\node (B) at (0,-2) {B};
+\node (C) at (3,-2) {C};
+\node (D) at (0,-4) {D};
+\node (E) at (3,-4) {E};
+\node (F) at (1.5,-6) {F};
+
+\draw[hedge] (A) -- (B);
+\draw[edge] (A) -- (C);
+\draw[edge] (B) -- (D);
+\draw[edge] (C) -- (E);
+\draw[edge] (D) -- (F);
+\draw[edge] (E) -- (F);
+\end{tikzpicture}
+
+{\small visited = \{A\} \quad output = []}
+\end{center}
+
+\textbf{Step 2:} Mark B as visited. Visit neighbor D.
+
+\begin{center}
+\begin{tikzpicture}[
+  >=Stealth,
+  every node/.style={circle, draw, minimum size=10mm},
+  edge/.style={->, thick},
+  highlight/.style={circle, draw, fill=blue!20, minimum size=10mm},
+  hedge/.style={->, thick, blue}
+]
+\node[highlight] (A) at (1.5,0) {A};
+\node[highlight] (B) at (0,-2) {B};
+\node (C) at (3,-2) {C};
+\node (D) at (0,-4) {D};
+\node (E) at (3,-4) {E};
+\node (F) at (1.5,-6) {F};
+
+\draw[hedge] (A) -- (B);
+\draw[edge] (A) -- (C);
+\draw[hedge] (B) -- (D);
+\draw[edge] (C) -- (E);
+\draw[edge] (D) -- (F);
+\draw[edge] (E) -- (F);
+\end{tikzpicture}
+
+{\small visited = \{A, B\} \quad output = []}
+\end{center}
+
+\textbf{Step 3:} Mark D as visited. Visit neighbor F.
+
+\begin{center}
+\begin{tikzpicture}[
+  >=Stealth,
+  every node/.style={circle, draw, minimum size=10mm},
+  edge/.style={->, thick},
+  highlight/.style={circle, draw, fill=blue!20, minimum size=10mm},
+  hedge/.style={->, thick, blue}
+]
+\node[highlight] (A) at (1.5,0) {A};
+\node[highlight] (B) at (0,-2) {B};
+\node (C) at (3,-2) {C};
+\node[highlight] (D) at (0,-4) {D};
+\node (E) at (3,-4) {E};
+\node (F) at (1.5,-6) {F};
+
+\draw[hedge] (A) -- (B);
+\draw[edge] (A) -- (C);
+\draw[hedge] (B) -- (D);
+\draw[edge] (C) -- (E);
+\draw[hedge] (D) -- (F);
+\draw[edge] (E) -- (F);
+\end{tikzpicture}
+
+{\small visited = \{A, B, D\} \quad output = []}
+\end{center}
+
+\textbf{Step 4:} Mark F as visited. F has no unvisited neighbors, so add F to output. Backtrack to D.
+
+\begin{center}
+\begin{tikzpicture}[
+  >=Stealth,
+  every node/.style={circle, draw, minimum size=10mm},
+  edge/.style={->, thick},
+  highlight/.style={circle, draw, fill=blue!20, minimum size=10mm},
+  hedge/.style={->, thick, blue}
+]
+\node[highlight] (A) at (1.5,0) {A};
+\node[highlight] (B) at (0,-2) {B};
+\node (C) at (3,-2) {C};
+\node[highlight] (D) at (0,-4) {D};
+\node (E) at (3,-4) {E};
+\node[highlight] (F) at (1.5,-6) {F};
+
+\draw[hedge] (A) -- (B);
+\draw[edge] (A) -- (C);
+\draw[hedge] (B) -- (D);
+\draw[edge] (C) -- (E);
+\draw[hedge] (D) -- (F);
+\draw[edge] (E) -- (F);
+\end{tikzpicture}
+
+{\small visited = \{A, B, D, F\} \quad output = [F]}
+\end{center}
+
+\textbf{Step 5:} D has no more unvisited neighbors, add D to output. Backtrack to B.
+
+{\small visited = \{A, B, D, F\} \quad output = [F, D]}
+
+\textbf{Step 6:} B has no more unvisited neighbors, add B to output. Backtrack to A. Visit second neighbor C.
+
+\begin{center}
+\begin{tikzpicture}[
+  >=Stealth,
+  every node/.style={circle, draw, minimum size=10mm},
+  edge/.style={->, thick},
+  highlight/.style={circle, draw, fill=blue!20, minimum size=10mm},
+  hedge/.style={->, thick, blue}
+]
+\node[highlight] (A) at (1.5,0) {A};
+\node[highlight] (B) at (0,-2) {B};
+\node (C) at (3,-2) {C};
+\node[highlight] (D) at (0,-4) {D};
+\node (E) at (3,-4) {E};
+\node[highlight] (F) at (1.5,-6) {F};
+
+\draw[hedge] (A) -- (B);
+\draw[hedge] (A) -- (C);
+\draw[hedge] (B) -- (D);
+\draw[edge] (C) -- (E);
+\draw[hedge] (D) -- (F);
+\draw[edge] (E) -- (F);
+\end{tikzpicture}
+
+{\small visited = \{A, B, D, F\} \quad output = [F, D, B]}
+\end{center}
+
+\textbf{Step 7:} Mark C as visited. Visit neighbor E.
+
+{\small visited = \{A, B, C, D, F\} \quad output = [F, D, B]}
+
+\textbf{Step 8:} Mark E as visited. E's neighbor F is already visited, so add E to output. Backtrack to C.
+
+{\small visited = \{A, B, C, D, E, F\} \quad output = [F, D, B, E]}
+
+\textbf{Step 9:} C has no more unvisited neighbors, so add C to output. Backtrack to A.
+
+{\small visited = \{A, B, C, D, E, F\} \quad output = [F, D, B, E, C]}
+
+\textbf{Step 10:} A has no more unvisited neighbors, so add A to output.
+
+{\small visited = \{A, B, C, D, E, F\} \quad output = [F, D, B, E, C, A]}
+
+\textbf{Reverse the output:}
+
+\begin{center}
+\begin{tikzpicture}[
+  >=Stealth,
+  every node/.style={circle, draw, minimum size=10mm},
+  edge/.style={->, thick},
+  found/.style={circle, draw, fill=green!20, minimum size=10mm},
+  hedge/.style={->, thick, blue}
+]
+\node[found] (A) at (1.5,0) {A};
+\node[found] (B) at (0,-2) {B};
+\node[found] (C) at (3,-2) {C};
+\node[found] (D) at (0,-4) {D};
+\node[found] (E) at (3,-4) {E};
+\node[found] (F) at (1.5,-6) {F};
+
+\draw[hedge] (A) -- (B);
+\draw[hedge] (A) -- (C);
+\draw[hedge] (B) -- (D);
+\draw[hedge] (C) -- (E);
+\draw[hedge] (D) -- (F);
+\draw[hedge] (E) -- (F);
+\end{tikzpicture}
+
+{\small Topological order = reverse of $[F, D, B, E, C, A]$ = $[A, C, E, B, D, F]$}
+\end{center}
+
+\textbf{Result:} The topological ordering is $[A, C, E, B, D, F]$.
+
+\textbf{Note:} To handle disconnected graphs, we loop over \textbf{all vertices} and run DFS from any vertex that hasn't been visited yet, using a visited set to prevent repeats.
+
+
+To implement this, we use the following code:
+
+\begin{verbatim}
+public class TopologicalSort {
+    Map<Vertex, List<Vertex>> adjacencyList;
+    public TopologicalSort(Map<Vertex, List<Vertex>> adjacencyList) {
+        this.adjacencyList = adjacencyList;
+    }
+    public List<Vertex> topologicalSort() {
+        Set<Vertex> visited = new HashSet<>();
+        List<Vertex> output = new ArrayList<>();
+        // Run DFS from every vertex to handle disconnected components
+        for (Vertex vertex : adjacencyList.keySet()) {
+            if (!visited.contains(vertex)) {
+                dfs(vertex, visited, output);
+            }
+        }
+        Collections.reverse(output); // Reverse post-order gives topological order
+        return output;
+    }
+    private void dfs(Vertex node, Set<Vertex> visited, List<Vertex> output) {
+        visited.add(node); // Mark current vertex as visited
+        for (Vertex neighbor : adjacencyList.get(node)) {
+            if (!visited.contains(neighbor)) {
+                dfs(neighbor, visited, output); // Recurse into unvisited neighbor
+            }
+        }
+        output.add(node); // All descendants processed, add to output
+    }
+}
+\end{verbatim}
+
+\begin{itemize}
+  \item \texttt{visited}: tracks which vertices have been visited across all DFS calls
+  \item \texttt{output}: collects vertices in reverse topological order (post-order)
+  \item The outer loop ensures all vertices are visited, even in disconnected graphs
+  \item After DFS completes, we reverse \texttt{output} to get the topological ordering
+\end{itemize}
+
+\textbf{Time Complexity:}
+The analysis is identical to standard DFS. Each vertex is visited once and each edge is checked once, giving:
+\[
+O(V + E).
+\]

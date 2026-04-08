@@ -442,30 +442,33 @@ We can traverse an adjacency list using \textbf{Depth-First Search (DFS)}. The a
 Using \texttt{edgeTo}, we can reconstruct the path from A to any vertex. For example, the path from A to D: follow \texttt{edgeTo[D] = E}, \texttt{edgeTo[E] = C}, \texttt{edgeTo[C] = B}, \texttt{edgeTo[B] = A}, giving us $A \rightarrow B \rightarrow C \rightarrow E \rightarrow D$.
 
 To implement this, we use the following code:
+
+
+
 \begin{verbatim}
 public class DepthFirstPaths {
-    Set<String> marked;
-    Map<String, String> edgeTo;
-    String s;
-
-    public DepthFirstPaths(Graph G, String s) {
-        marked = new HashSet<>();
+    Set<Vertex> visited;
+    Map<Vertex, Vertex> edgeTo;
+    Vertex input;
+    public DepthFirstPaths(Graph graph, Vertex input) {
+        visited = new HashSet<>();
         edgeTo = new HashMap<>();
-        this.s = s;
-        dfs(G, s);
+        this.input = input;
+        dfs(graph, input);
     }
-
-    private void dfs(Graph G, String v) {
-        marked.add(v);
-        for (String w : G.adj(v)) {
-            if (!marked.contains(w)) {
-                edgeTo.put(w, v);
-                dfs(G, w);
+    
+    private void dfs(Graph graph, Vertex current) {
+        visited.add(current); // Mark current vertex as visited
+        for (Vertex neighbor : graph.adj(current)) { // Check each neighbor
+            if (!visited.contains(neighbor)) {
+                edgeTo.put(neighbor, current); // Record that we reached neighbor from current
+                dfs(graph, neighbor); // Recurse into unvisited neighbor
             }
         }
     }
 }
 \end{verbatim}
+
 
 
 \textbf{Time Complexity:} The time complexity for this DFS algorithm is
@@ -650,24 +653,21 @@ To implement this, we use the following code:
 
 \begin{verbatim}
 public class CountPaths {
-    Map<String, List<String>> adjList;
-    Set<String> visited;
-
-    public CountPaths(Map<String, List<String>> adjList) {
+    Map<Vertex, List<Vertex>> adjList;
+    Set<Vertex> visited;
+    public CountPaths(Map<Vertex, List<Vertex>> adjList) {
         this.adjList = adjList;
         this.visited = new HashSet<>();
     }
-
-    public int dfs(String node, String target) {
-        if (visited.contains(node)) return 0;
-        if (node.equals(target)) return 1;
-
+    public int dfs(Vertex node, Vertex target) {
+        if (visited.contains(node)) return 0; // Already on this path
+        if (node.equals(target)) return 1; // Reached target, count this path
         int count = 0;
-        visited.add(node);
-        for (String neighbor : adjList.get(node)) {
-            count += dfs(neighbor, target);
+        visited.add(node); // Add to current path
+        for (Vertex neighbor : adjList.get(node)) {
+            count += dfs(neighbor, target); // Explore each neighbor
         }
-        visited.remove(node);
+        visited.remove(node); // Backtrack to allow other paths
         return count;
     }
 }
@@ -775,36 +775,33 @@ To implement this, we use the following code:
 
 \begin{verbatim}
 public class ShortestPath {
-    Map<String, List<String>> adjList;
-    Set<String> visited;
-
-    public ShortestPath(Map<String, List<String>> adjList) {
+    Map<Vertex, List<Vertex>> adjList;
+    Set<Vertex> visited;
+    public ShortestPath(Map<Vertex, List<Vertex>> adjList) {
         this.adjList = adjList;
         this.visited = new HashSet<>();
     }
-
-    public int bfs(String node, String target) {
+    public int bfs(Vertex node, Vertex target) {
         int length = 0;
         visited.add(node);
-        Queue<String> queue = new LinkedList<>();
-        queue.add(node);
-
+        Queue<Vertex> queue = new LinkedList<>();
+        queue.add(node); // Start with source in queue
         while (!queue.isEmpty()) {
-            int size = queue.size();
+            int size = queue.size(); // Number of nodes at current level
             for (int i = 0; i < size; i++) {
-                String curr = queue.poll();
-                if (curr.equals(target)) return length;
-
-                for (String neighbor : adjList.get(curr)) {
+                Vertex curr = queue.peek(); // Process next node in level
+                queue.remove();
+                if (curr.equals(target)) return length; // Found target
+                for (Vertex neighbor : adjList.get(curr)) {
                     if (!visited.contains(neighbor)) {
-                        visited.add(neighbor);
-                        queue.add(neighbor);
+                        visited.add(neighbor); // Mark to avoid revisiting
+                        queue.add(neighbor); // Add to next level
                     }
                 }
             }
-            length++;
+            length++; // Move to next level
         }
-        return -1;
+        return -1; // Target not reachable
     }
 }
 \end{verbatim}
